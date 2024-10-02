@@ -1,0 +1,6 @@
+﻿{
+  "Values": {
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "KV_NAME": "kv-ol3b"
+  }
+}
