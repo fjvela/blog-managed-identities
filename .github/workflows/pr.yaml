@@ -1,0 +1,50 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches:
+      - '**'
+
+jobs:
+  dotnet-build:
+    name: Build .NET App
+    # if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./app/DemoManagedIdenties
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+  terraform-plan:
+    name: Terraform Plan
+    # if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./infra
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        run: terraform plan
