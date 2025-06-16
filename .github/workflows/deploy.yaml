@@ -1,0 +1,115 @@
+name: Deploy Terraform and Azure Function
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  id-token: write 
+
+env:
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: './app/DemoManagedIdenties'
+  TERRAFORM_DIR: './infra'
+  DOTNET_VERSION: '9.0.x'
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    env:
+      SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+      GITHUB_ORGANIZATION_NAME: ${{ github.repository_owner }}
+    outputs:
+      kv: ${{ steps.tf-output.outputs.kv }}
+      func_app_linux: ${{ steps.tf-output.outputs.func_app_linux }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: terraform init
+        env:
+          TF_VAR_subscription_id: ${{ env.SUBSCRIPTION_ID }}
+          TF_VAR_github_repository_name: ${{ env.GITHUB_REPOSITORY_NAME }}
+          TF_VAR_github_organization_name: ${{ env.GITHUB_ORGANIZATION_NAME }}
+          TF_VAR_github_token: ${{ secrets.GH_TOKEN_WRITE_SECRETS }}
+
+      - name: Terraform Apply
+        id: tf-apply
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: terraform apply -auto-approve
+        env:
+          TF_VAR_subscription_id: ${{ env.SUBSCRIPTION_ID }}
+          TF_VAR_github_repository_name: ${{ env.GITHUB_REPOSITORY_NAME }}
+          TF_VAR_github_organization_name: ${{ env.GITHUB_ORGANIZATION_NAME }}
+          TF_VAR_github_token: ${{ secrets.GH_TOKEN_WRITE_SECRETS }}
+
+      - name: Terraform Output
+        id: tf-output
+        working-directory: ${{ env.TERRAFORM_DIR }}
+        run: |
+          echo "kv=$(terraform output -json kv)" >> $GITHUB_OUTPUT
+          echo "func_app_linux=$(terraform output -json func_app_linux)" >> $GITHUB_OUTPUT
+
+  deploy_function:
+    needs: terraform
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup DotNet ${{ env.DOTNET_VERSION }} Environment
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: 'Resolve Project Dependencies Using Dotnet'
+        shell: bash
+        run: |
+          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+          dotnet build --configuration Release --output ./output
+          popd
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set Function App Variables
+        id: set-func-vars
+        run: |
+          AZURE_FUNCTIONAPP_NAME=$(echo '${{ needs.terraform.outputs.func_app_linux }}' | jq -r '.name')
+          AZURE_FUNCTIONAPP_RESOURCE_GROUP=$(echo '${{ needs.terraform.outputs.func_app_linux }}' | jq -r '.resource_group')
+
+          echo "AZURE_FUNCTIONAPP_NAME=$AZURE_FUNCTIONAPP_NAME" >> $GITHUB_ENV
+          echo "AZURE_FUNCTIONAPP_RESOURCE_GROUP=$AZURE_FUNCTIONAPP_RESOURCE_GROUP" >> $GITHUB_ENV
+
+      - name: Deploy Azure Function
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output
+
+      - name: Get Function URL
+        id: get-url
+        run: |
+          url=$(az functionapp function show --resource-group ${{ env.AZURE_FUNCTIONAPP_RESOURCE_GROUP }} --name ${{ env.AZURE_FUNCTIONAPP_NAME }} --function-name GetSecret --query "invokeUrlTemplate" -o tsv)
+          echo "FUNCTION_URL=$url" >> $GITHUB_OUTPUT
+
+      - name: Trigger Function with curl
+        run: |
+          curl -X GET "${{ steps.get-url.outputs.FUNCTION_URL }}?name=secret-sauce&credentialType=DefaultAzureCredential" -H "Content-Type: application/json"

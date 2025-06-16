@@ -2,6 +2,29 @@ variable "subscription_id" {
   description = "The Azure subscription ID where the resources will be deployed"
 }
 
+variable "github_organization_name" {
+  description = "Name of the GitHub organization"
+  default     = "fjvela"
+}
+
+variable "github_token" {
+  description = "GitHub token with permissions to manage repository secrets"
+  type        = string
+  sensitive   = true
+}
+
+variable "branches" {
+  description = "List of git branches to add as subject to the federated identity credential"
+  default = [
+    "main"
+  ]
+}
+
+variable "github_repository_name" {
+  description = "Name of the repository to setup the secrets needed"
+  default     = "blog-managed-identities"
+}
+
 variable "st_func_app" {
   default = {
     account_tier             = "Standard"
@@ -24,7 +47,7 @@ variable "func_app_linux" {
 
     site_config = {
       application_stack = {
-        dotnet_version              = "8.0"
+        dotnet_version              = "9.0"
         use_dotnet_isolated_runtime = true
       }
     }
