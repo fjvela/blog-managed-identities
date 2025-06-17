@@ -22,7 +22,7 @@ namespace FunctionApp
         }
 
         [Function("GetSecret")]
-        public IActionResult GetSecret([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req, 
+        public IActionResult GetSecret([HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req,
             [FromQuery] string name,
             [FromQuery] string credentialType)
         {
@@ -37,7 +37,8 @@ namespace FunctionApp
 
         private TokenCredential GetTokenCredential(string credentialType)
         {
-            switch (credentialType) {
+            switch (credentialType)
+            {
                 case "DefaultAzureCredential":
                     return new DefaultAzureCredential();
                 case "ChainedTokenCredential":
