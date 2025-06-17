@@ -9,7 +9,7 @@ permissions:
   id-token: write 
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: './app/DemoManagedIdenties'
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: './app/DemoManagedIdenties/FunctionApp'
   TERRAFORM_DIR: './infra'
   DOTNET_VERSION: '9.0.x'
 
@@ -67,27 +67,17 @@ jobs:
     needs: terraform
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
 
-      - name: Setup DotNet ${{ env.DOTNET_VERSION }} Environment
-        uses: actions/setup-dotnet@v3
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: 'Resolve Project Dependencies Using Dotnet'
-        shell: bash
+      - name: install Azure Functions Core Tools
         run: |
-          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
-          dotnet build --configuration Release --output ./output
-          popd
 
-      - name: Azure login
-        uses: azure/login@v2
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
+          sudo mv microsoft.gpg /etc/apt/trusted.gpg.d/microsoft.gpg
+          
+          sudo sh -c 'echo "deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-ubuntu-$(lsb_release -cs 2>/dev/null)-prod $(lsb_release -cs 2>/dev/null) main" > /etc/apt/sources.list.d/dotnetdev.list'
+
+          sudo apt-get update
+          sudo apt-get install -y azure-functions-core-tools-4
 
       - name: Set Function App Variables
         id: set-func-vars
@@ -98,11 +88,30 @@ jobs:
           echo "AZURE_FUNCTIONAPP_NAME=$AZURE_FUNCTIONAPP_NAME" >> $GITHUB_ENV
           echo "AZURE_FUNCTIONAPP_RESOURCE_GROUP=$AZURE_FUNCTIONAPP_RESOURCE_GROUP" >> $GITHUB_ENV
 
-      - name: Deploy Azure Function
-        uses: Azure/functions-action@v1
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
         with:
-          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Setup DotNet ${{ env.DOTNET_VERSION }} Environment
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: 'Build & Publish Azure Function'
+        shell: bash
+        run: |
+          pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+
+          dotnet build --configuration Release
+          func azure functionapp publish ${{ env.AZURE_FUNCTIONAPP_NAME }} --dotnet-isolated --dotnet-version 9.0
+
+          popd
 
       - name: Get Function URL
         id: get-url
@@ -112,4 +121,4 @@ jobs:
 
       - name: Trigger Function with curl
         run: |
-          curl -X GET "${{ steps.get-url.outputs.FUNCTION_URL }}?name=secret-sauce&credentialType=DefaultAzureCredential" -H "Content-Type: application/json"
+          curl -X GET "${{ steps.get-url.outputs.FUNCTION_URL }}?name=secret-sauce&credentialType=DefaultAzureCredential" | jq 
