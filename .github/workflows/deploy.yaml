@@ -25,7 +25,7 @@ jobs:
       func_app_linux: ${{ steps.tf-output.outputs.func_app_linux }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Azure Login
         uses: azure/login@v2
@@ -89,7 +89,7 @@ jobs:
           echo "AZURE_FUNCTIONAPP_RESOURCE_GROUP=$AZURE_FUNCTIONAPP_RESOURCE_GROUP" >> $GITHUB_ENV
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Azure login
         uses: azure/login@v2
