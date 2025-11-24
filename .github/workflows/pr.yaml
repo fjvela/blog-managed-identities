@@ -16,7 +16,7 @@ jobs:
         working-directory: ./app/DemoManagedIdenties
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -38,7 +38,7 @@ jobs:
         working-directory: ./infra
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
