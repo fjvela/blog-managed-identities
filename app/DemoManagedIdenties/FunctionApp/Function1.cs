@@ -128,7 +128,7 @@ namespace FunctionApp
                 case "ChainedTokenCredential":
                     return new ChainedTokenCredential();
                 case "ManagedIdentityCredential":
-                    return new ManagedIdentityCredential();
+                    return new ManagedIdentityCredential(ManagedIdentityId.SystemAssigned);
             }
 
             throw new Exception($"The credential type {credentialType} is not valid");

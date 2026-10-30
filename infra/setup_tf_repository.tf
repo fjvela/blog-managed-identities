@@ -6,13 +6,12 @@ resource "azurerm_user_assigned_identity" "uid" {
 }
 
 resource "azurerm_federated_identity_credential" "federated_identity_credential" {
-  for_each            = toset(var.branches)
-  name                = "gh-${var.github_organization_name}-${var.github_repository_name}-${each.value}"
-  resource_group_name = azurerm_resource_group.rg.name
-  audience            = ["api://AzureADTokenExchange"]
-  issuer              = "https://token.actions.githubusercontent.com"
-  parent_id           = azurerm_user_assigned_identity.uid.id
-  subject             = "repo:${var.github_organization_name}/${var.github_repository_name}:ref:refs/heads/${each.value}"
+  for_each                  = toset(var.branches)
+  name                      = "gh-${var.github_organization_name}-${var.github_repository_name}-${each.value}"
+  audience                  = ["api://AzureADTokenExchange"]
+  issuer                    = "https://token.actions.githubusercontent.com"
+  user_assigned_identity_id = azurerm_user_assigned_identity.uid.id
+  subject                   = "repo:${var.github_organization_name}/${var.github_repository_name}:ref:refs/heads/${each.value}"
 }
 
 # GitHub Setup

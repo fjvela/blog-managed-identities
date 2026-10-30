@@ -47,7 +47,7 @@ variable "func_app_linux" {
 
     site_config = {
       application_stack = {
-        dotnet_version              = "9.0"
+        dotnet_version              = "10.0"
         use_dotnet_isolated_runtime = true
       }
     }

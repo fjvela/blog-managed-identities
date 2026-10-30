@@ -2,14 +2,19 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "4.33.0"
+      version = "5.11.0"
     }
     github = {
       source  = "integrations/github"
-      version = "6.6.0"
+      version = "6.13.0"
     }
   }
 }
+provider "azurerm" {
+    features {
+    }
+}
+
 resource "azurerm_resource_group" "rg_st_tfstate" {
   name     = "rg-managed-identites"
   location = "West Europe"

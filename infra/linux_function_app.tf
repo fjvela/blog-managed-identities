@@ -61,6 +61,7 @@ resource "azurerm_key_vault" "kv" {
   resource_group_name         = azurerm_resource_group.rg.name
   location                    = azurerm_resource_group.rg.location
   tenant_id                   = data.azurerm_client_config.current.tenant_id
+  rbac_authorization_enabled  = false
   enabled_for_disk_encryption = var.kv.enabled_for_disk_encryption
   soft_delete_retention_days  = var.kv.soft_delete_retention_days
   purge_protection_enabled    = var.kv.purge_protection_enabled
