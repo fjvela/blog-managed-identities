@@ -1,5 +1,5 @@
-@host = http://localhost:7071
-# @host = https://func-bks0.azurewebsites.net
+# @host = http://localhost:7071
+@host = https://func-ierk.azurewebsites.net
 
 ### SDK: DefaultAzureCredential (local: Azure CLI login, Azure: managed identity)
 GET {{host}}/api/GetSecret

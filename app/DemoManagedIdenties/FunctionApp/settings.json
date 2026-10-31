@@ -1,6 +1,6 @@
 ﻿{
   "Values": {
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
-    "KV_NAME": "kv-bks0"
+    "KV_NAME": "func-ierk"
   }
 }
