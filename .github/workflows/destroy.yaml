@@ -18,8 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
-      GITHUB_ORGANIZATION_NAME: ${{ github.repository_owner }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -31,23 +29,19 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v4
+      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_wrapper: false
 
       - name: Terraform Init
         working-directory: ${{ env.TERRAFORM_DIR }}
-        run: terraform init
+        run: tofu init
         env:
           TF_VAR_subscription_id: ${{ env.SUBSCRIPTION_ID }}
-          TF_VAR_github_repository_name: ${{ env.GITHUB_REPOSITORY_NAME }}
-          TF_VAR_github_organization_name: ${{ env.GITHUB_ORGANIZATION_NAME }}
-          TF_VAR_github_token: ${{ secrets.GH_TOKEN_WRITE_SECRETS }}
 
       - name: Terraform Destroy
         working-directory: ${{ env.TERRAFORM_DIR }}
-        run: terraform destroy -auto-approve
+        run: tofu destroy -auto-approve
         env:
           TF_VAR_subscription_id: ${{ env.SUBSCRIPTION_ID }}
-          TF_VAR_github_repository_name: ${{ env.GITHUB_REPOSITORY_NAME }}
-          TF_VAR_github_organization_name: ${{ env.GITHUB_ORGANIZATION_NAME }}
-          TF_VAR_github_token: ${{ secrets.GH_TOKEN_WRITE_SECRETS }}

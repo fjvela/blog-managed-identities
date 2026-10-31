@@ -1,0 +1,20 @@
+@host = http://localhost:7071
+# @host = https://func-bks0.azurewebsites.net
+
+### SDK: DefaultAzureCredential (local: Azure CLI login, Azure: managed identity)
+GET {{host}}/api/GetSecret
+
+### SDK: explicit secret name and credential type
+GET {{host}}/api/GetSecret?name=secret-sauce&credentialType=DefaultAzureCredential
+
+### SDK: ManagedIdentityCredential only (fails locally: no managed identity endpoint)
+GET {{host}}/api/GetSecret?credentialType=ManagedIdentityCredential
+
+### SDK: ChainedTokenCredential (always fails: chain is built with no credentials)
+GET {{host}}/api/GetSecret?credentialType=ChainedTokenCredential
+
+### SDK: secret that doesn't exist
+GET {{host}}/api/GetSecret?name=does-not-exist
+
+### Raw HTTP: token from IDENTITY_ENDPOINT, then Key Vault REST API (Azure only)
+GET {{host}}/api/GetSecretHardWay?name=secret-sauce

@@ -4,10 +4,6 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "5.11.0"
     }
-    github = {
-      source  = "integrations/github"
-      version = "6.13.0"
-    }
   }
 
   backend "azurerm" {
@@ -45,12 +41,5 @@ module "naming" {
   version = "0.4.4"
 }
 
-provider "github" {
-  owner = var.github_organization_name
-  token = var.github_token
-}
-
 data "azurerm_client_config" "current" {}
-
-data "azurerm_subscription" "current" {}
 

@@ -40,11 +40,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v4
+      - name: Setup OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_wrapper: false
 
       - name: Terraform Init
-        run: terraform init
+        run: tofu init
 
       - name: Terraform Plan
-        run: terraform plan
+        run: tofu plan

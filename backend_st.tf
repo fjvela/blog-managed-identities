@@ -11,9 +11,17 @@ terraform {
   }
 }
 provider "azurerm" {
+    subscription_id = var.subscription_id
     features {
     }
 }
+
+provider "github" {
+  owner = var.github_organization_name
+  token = var.github_token
+}
+
+data "azurerm_subscription" "current" {}
 
 resource "azurerm_resource_group" "rg_st_tfstate" {
   name     = "rg-managed-identites"

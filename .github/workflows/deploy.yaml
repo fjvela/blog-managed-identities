@@ -18,8 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
-      GITHUB_ORGANIZATION_NAME: ${{ github.repository_owner }}
     outputs:
       kv: ${{ steps.tf-output.outputs.kv }}
       func_app_linux: ${{ steps.tf-output.outputs.func_app_linux }}
@@ -34,34 +32,30 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v4
+      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_wrapper: false
 
       - name: Terraform Init
         working-directory: ${{ env.TERRAFORM_DIR }}
-        run: terraform init
+        run: tofu init
         env:
           TF_VAR_subscription_id: ${{ env.SUBSCRIPTION_ID }}
-          TF_VAR_github_repository_name: ${{ env.GITHUB_REPOSITORY_NAME }}
-          TF_VAR_github_organization_name: ${{ env.GITHUB_ORGANIZATION_NAME }}
-          TF_VAR_github_token: ${{ secrets.GH_TOKEN_WRITE_SECRETS }}
 
       - name: Terraform Apply
         id: tf-apply
         working-directory: ${{ env.TERRAFORM_DIR }}
-        run: terraform apply -auto-approve
+        run: tofu apply -auto-approve
         env:
           TF_VAR_subscription_id: ${{ env.SUBSCRIPTION_ID }}
-          TF_VAR_github_repository_name: ${{ env.GITHUB_REPOSITORY_NAME }}
-          TF_VAR_github_organization_name: ${{ env.GITHUB_ORGANIZATION_NAME }}
-          TF_VAR_github_token: ${{ secrets.GH_TOKEN_WRITE_SECRETS }}
 
       - name: Terraform Output
         id: tf-output
         working-directory: ${{ env.TERRAFORM_DIR }}
         run: |
-          echo "kv=$(terraform output -json kv)" >> $GITHUB_OUTPUT
-          echo "func_app_linux=$(terraform output -json func_app_linux)" >> $GITHUB_OUTPUT
+          echo "kv=$(tofu output -json kv)" >> $GITHUB_OUTPUT
+          echo "func_app_linux=$(tofu output -json func_app_linux)" >> $GITHUB_OUTPUT
 
   deploy_function:
     needs: terraform

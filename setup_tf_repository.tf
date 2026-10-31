@@ -1,8 +1,7 @@
 resource "azurerm_user_assigned_identity" "uid" {
   name                = "gh-${var.github_organization_name}-${var.github_repository_name}"
-  resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
-  tags                = local.tags
+  resource_group_name = azurerm_resource_group.rg_st_tfstate.name
+  location            = azurerm_resource_group.rg_st_tfstate.location
 }
 
 resource "azurerm_federated_identity_credential" "federated_identity_credential" {
@@ -12,6 +11,13 @@ resource "azurerm_federated_identity_credential" "federated_identity_credential"
   issuer                    = "https://token.actions.githubusercontent.com"
   user_assigned_identity_id = azurerm_user_assigned_identity.uid.id
   subject                   = "repo:${var.github_organization_name}/${var.github_repository_name}:ref:refs/heads/${each.value}"
+}
+
+resource "azurerm_role_assignment" "uid_contributor" {
+  scope                = data.azurerm_subscription.current.id
+  role_definition_name = "Contributor"
+  principal_id         = azurerm_user_assigned_identity.uid.principal_id
+  principal_type       = "ServicePrincipal"
 }
 
 # GitHub Setup
